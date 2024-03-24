@@ -12,7 +12,7 @@ func main() {
 	loop := eventloop.NewEventLoop()
 
 	// new tcp server
-	server := goreactor.NewTCPServer(loop, "127.0.0.1:6379", 16, goreactor.RoundRobin())
+	server := goreactor.NewTCPServer(loop, "127.0.0.1:6380", 16, goreactor.RoundRobin())
 
 	// get all io loops setup
 	_, ioLoops := server.GetAllLoops()

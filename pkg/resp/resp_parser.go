@@ -15,12 +15,12 @@ type respParser struct {
 
 	state stack.Stack
 
-	values []interface{}
+	values []Value
 }
 
 type RespParser interface {
 	Write(bs []byte) error
-	TakeValue() (interface{}, bool)
+	TakeValue() (Value, bool)
 }
 
 // 保证peeker里面至少有一个字符
@@ -704,7 +704,7 @@ func (parser *respParser) Write(bs []byte) error {
 	return parser.parse()
 }
 
-func (parser *respParser) TakeValue() (interface{}, bool) {
+func (parser *respParser) TakeValue() (Value, bool) {
 	if len(parser.values) != 0 {
 		ret := parser.values[0]
 		parser.values = parser.values[1:]

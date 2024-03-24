@@ -2,7 +2,9 @@ package handler
 
 import (
 	"fmt"
+	"go-rds/commands"
 	connstate "go-rds/conn_state"
+	"go-rds/global"
 	"go-rds/pkg/resp"
 	"log"
 
@@ -25,6 +27,7 @@ func OnMessage(conn goreactor.TCPConnection, buffer buffer.Buffer) {
 			break
 		}
 		state.ValueToken.PushBack(value)
+		fmt.Println(value)
 	}
 
 	if !state.HandleShake {
@@ -70,9 +73,23 @@ func OnMessage(conn goreactor.TCPConnection, buffer buffer.Buffer) {
 			panic(err)
 		}
 		conn.Send(toClientHelloBytes)
-		fmt.Printf("%s\n", toClientHelloBytes)
 		state.HandleShake = true
 	}
 
 	// 消费数据
+	for {
+		if state.ValueToken.Size() == 0 {
+			return
+		}
+
+		cmd, err := global.CommandParser.Parse(state.ValueToken.PopFront().(resp.Value))
+		if err != nil {
+			conn.ForceClose()
+		}
+		global.MemLoop.QueueCommand(&commands.MemLoopCommandCover{
+			Loop:         conn.GetEventLoop(),
+			ConnectionID: state.ConnID,
+			Command:      cmd,
+		})
+	}
 }
