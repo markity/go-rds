@@ -2,8 +2,8 @@ package handler
 
 import (
 	"go-rds/commands"
-	connstate "go-rds/conn_state"
 	"go-rds/global"
+	"go-rds/types"
 	"log"
 
 	goreactor "github.com/markity/go-reactor"
@@ -11,7 +11,7 @@ import (
 )
 
 func OnMessage(conn goreactor.TCPConnection, buffer buffer.Buffer) {
-	state := conn.MustGetContext("state").(*connstate.ConnState)
+	state := conn.MustGetContext("state").(*types.ConnState)
 	err := state.RespParser.Write([]byte(buffer.RetrieveAsString()))
 	if err != nil {
 		log.Printf("client wrong input: %v", err)

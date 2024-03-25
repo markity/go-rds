@@ -1,4 +1,4 @@
-package connstate
+package types
 
 import (
 	"go-rds/pkg/resp"
