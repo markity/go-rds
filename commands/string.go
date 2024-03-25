@@ -7,4 +7,12 @@ type SetCommand struct {
 	Encoding datastructure.EncodingEnum
 	ValueRaw string
 	ValueInt int64
+	Nx       bool
+	Xx       bool
+	Ex       *int
+	Px       *int
+}
+
+type GetCommand struct {
+	Key string
 }

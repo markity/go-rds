@@ -5,7 +5,7 @@ type PingCommand struct {
 }
 
 type HelloCommand struct {
-	Proto int
+	Proto string
 }
 
 type SetInfoLibNameCommand struct {
@@ -16,5 +16,9 @@ type SetInfoLibVersionCommand struct {
 	LibVersion string
 }
 
+// redis client会发这个命令
 type CommandCommand struct {
+}
+
+type UnknownCommand struct {
 }

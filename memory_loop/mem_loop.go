@@ -5,6 +5,7 @@ import (
 	datastructure "go-rds/data_structure"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type memLoop struct {
@@ -14,6 +15,25 @@ type memLoop struct {
 	commands []*commands.MemLoopCommandCover
 	mu       sync.Mutex
 	cond     *sync.Cond
+}
+
+// pay attention to the ttl
+func (mem *memLoop) GetRdsObj(key string) *datastructure.RdsObject {
+	rdsObj, ok := mem.bigKV[key]
+	if !ok {
+		return nil
+	}
+
+	if rdsObj.TTL != nil && time.Now().After(*rdsObj.TTL) {
+		delete(mem.bigKV, key)
+		return nil
+	}
+
+	return mem.bigKV[key]
+}
+
+func (mem *memLoop) DelRdsObj(key string) {
+	delete(mem.bigKV, key)
 }
 
 func (mem *memLoop) QueueCommand(command *commands.MemLoopCommandCover) {

@@ -1,5 +1,7 @@
 package datastructure
 
+import "time"
+
 type TypeEnum int
 
 const (
@@ -12,7 +14,7 @@ const (
 type EncodingEnum int
 
 const (
-	EncodingStringInt TypeEnum = iota
+	EncodingStringInt EncodingEnum = iota
 	EncodingStringRaw
 
 	EncodingHash
@@ -22,5 +24,14 @@ const (
 type RdsObject struct {
 	Type     TypeEnum
 	Encoding EncodingEnum
+	TTL      *time.Time
 	Data     interface{}
+}
+
+type StringRaw struct {
+	Data string
+}
+
+type StringInt struct {
+	Data int64
 }
