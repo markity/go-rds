@@ -83,12 +83,12 @@ func memloop(mem *memLoop) {
 					var ttl *time.Time
 					if innerCmd.Px != nil {
 						ttl_ := time.Now()
-						ttl_ = ttl_.Add(time.Second * time.Duration(*innerCmd.Px))
+						ttl_ = ttl_.Add(time.Millisecond * time.Duration(*innerCmd.Px))
 						ttl = &ttl_
 					}
 					if innerCmd.Ex != nil {
 						ttl_ := time.Now()
-						ttl_ = ttl_.Add(time.Millisecond * time.Duration(*innerCmd.Px))
+						ttl_ = ttl_.Add(time.Second * time.Duration(*innerCmd.Ex))
 						ttl = &ttl_
 					}
 
