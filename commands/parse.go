@@ -76,10 +76,21 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 
 		second := getExactlyNthBulkStringInArray(val, 1)
 		if second == nil {
-			return nil, errors.New("unexpected ping second param")
+			panic("unexpected")
 		}
 
 		return &PingCommand{
+			Message: second,
+		}, nil
+	case "echo":
+		if len(val.Data) != 2 {
+			return &UnknownCommand{}, nil
+		}
+
+		// no panic here
+		second := *getExactlyNthBulkStringInArray(val, 1)
+
+		return &EchoCommand{
 			Message: second,
 		}, nil
 	case "client":

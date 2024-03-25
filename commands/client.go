@@ -4,6 +4,10 @@ type PingCommand struct {
 	Message *string
 }
 
+type EchoCommand struct {
+	Message string
+}
+
 type HelloCommand struct {
 	Proto string
 }

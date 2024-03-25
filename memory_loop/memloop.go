@@ -31,6 +31,10 @@ func memloop(mem *memLoop) {
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString(msg))
 					})
+				case *commands.EchoCommand:
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString(innerCmd.Message))
+					})
 				case *commands.HelloCommand:
 					if innerCmd.Proto != "3" {
 						log.Printf("hand shake failed\n")
