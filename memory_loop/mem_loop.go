@@ -18,18 +18,19 @@ type memLoop struct {
 }
 
 // pay attention to the ttl
-func (mem *memLoop) GetRdsObj(key string) *datastructure.RdsObject {
+func (mem *memLoop) GetRdsObj(key string) (*datastructure.RdsObject, time.Time) {
+	now := time.Now()
 	rdsObj, ok := mem.bigKV[key]
 	if !ok {
-		return nil
+		return nil, now
 	}
 
-	if rdsObj.TTL != nil && time.Now().After(*rdsObj.TTL) {
+	if rdsObj.TTL != nil && now.After(*rdsObj.TTL) {
 		delete(mem.bigKV, key)
-		return nil
+		return nil, now
 	}
 
-	return mem.bigKV[key]
+	return mem.bigKV[key], now
 }
 
 func (mem *memLoop) DelRdsObj(key string) {

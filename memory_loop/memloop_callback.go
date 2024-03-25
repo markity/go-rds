@@ -1,6 +1,7 @@
 package memoryloop
 
 import (
+	"fmt"
 	"go-rds/pkg/resp"
 	"go-rds/types"
 
@@ -12,6 +13,8 @@ func CallbackFunc(loop eventloop.EventLoop, connID int64, response resp.Value) {
 	if !ok {
 		return
 	}
+
+	fmt.Println(response)
 
 	bs, err := response.EncodeToBytes()
 	if err != nil {

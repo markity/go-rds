@@ -16,3 +16,7 @@ type SetCommand struct {
 type GetCommand struct {
 	Key string
 }
+
+type TTLCommand struct {
+	Key string
+}

@@ -72,7 +72,7 @@ func memloop(mem *memLoop) {
 						CallbackFunc(command.Loop, command.ConnectionID, be)
 					})
 				case *commands.SetCommand:
-					obj := mem.GetRdsObj(innerCmd.Key)
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
 					if (innerCmd.Nx && obj != nil) || (innerCmd.Xx && obj == nil) {
 						command.Loop.RunInLoop(func() {
 							CallbackFunc(command.Loop, command.ConnectionID, resp.ToNull())
@@ -114,6 +114,23 @@ func memloop(mem *memLoop) {
 					}
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString("OK"))
+					})
+				case *commands.TTLCommand:
+					obj, now := mem.GetRdsObj(innerCmd.Key)
+					if obj == nil {
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(-2))
+						})
+						continue
+					}
+					if obj.TTL == nil {
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(-1))
+						})
+						continue
+					}
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64((*obj.TTL).Sub(now).Seconds())))
 					})
 				}
 			}

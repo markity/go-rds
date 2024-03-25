@@ -14,11 +14,9 @@ type Integer struct {
 func (i *Integer) EncodeToBytes() ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteByte(':')
-	if i.Data < 0 {
-		buf.WriteByte('-')
-	}
 	buf.WriteString(fmt.Sprint(i.Data))
 	buf.WriteString("\r\n")
+	fmt.Println(buf.Bytes())
 	return buf.Bytes(), nil
 }
 

@@ -266,6 +266,16 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 			Ex:       ex,
 			Px:       px,
 		}, nil
+	case "ttl":
+		if len(val.Data) != 2 {
+			return &UnknownCommand{}, nil
+		}
+
+		// no panic here
+		key := *getExactlyNthBulkStringInArray(val, 1)
+		return &TTLCommand{
+			Key: key,
+		}, nil
 	default:
 		return &UnknownCommand{}, nil
 	}
