@@ -1,6 +1,7 @@
 package memoryloop
 
 import (
+	"fmt"
 	"go-rds/commands"
 	datastructure "go-rds/data_structure"
 	"go-rds/pkg/resp"
@@ -131,6 +132,54 @@ func memloop(mem *memLoop) {
 					}
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64((*obj.TTL).Sub(now).Seconds())))
+					})
+				case *commands.PTTLCommand:
+					obj, now := mem.GetRdsObj(innerCmd.Key)
+					if obj == nil {
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(-2))
+						})
+						continue
+					}
+					if obj.TTL == nil {
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(-1))
+						})
+						continue
+					}
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64((*obj.TTL).Sub(now).Milliseconds())))
+					})
+				case *commands.GetCommand:
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
+					if obj == nil {
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToNull())
+						})
+						continue
+					}
+
+					if obj.Type != datastructure.TypeString {
+						se, err := resp.ToSimpleError("WRONGTYPE", "Operation against a key holding the wrong kind of value")
+						if err != nil {
+							panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, se)
+						})
+						continue
+					}
+
+					var data string
+					switch obj.Encoding {
+					case datastructure.EncodingStringRaw:
+						data = obj.Data.(*datastructure.StringRaw).Data
+					case datastructure.EncodingStringInt:
+						data = fmt.Sprint(obj.Data.(*datastructure.StringRaw).Data)
+					}
+
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString(data))
 					})
 				}
 			}

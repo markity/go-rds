@@ -20,3 +20,7 @@ type GetCommand struct {
 type TTLCommand struct {
 	Key string
 }
+
+type PTTLCommand struct {
+	Key string
+}
