@@ -185,6 +185,205 @@ func memloop(mem *memLoop) {
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString(data))
 					})
+				case *commands.AppendCommand:
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
+					// 如果不存在, 那么直接创建
+					if obj == nil {
+						obj := new(datastructure.RdsObject)
+						obj.Type = datastructure.TypeString
+						i64, isInt64 := commands.ToolIsStringInteger(innerCmd.Content)
+						if isInt64 {
+							obj.Encoding = datastructure.EncodingStringInt
+							obj.Data = &datastructure.StringInt{
+								Data: i64,
+							}
+						} else {
+							obj.Encoding = datastructure.EncodingStringRaw
+							obj.Data = &datastructure.StringRaw{
+								Data: innerCmd.Content,
+							}
+						}
+						obj.TTL = nil
+						mem.SetObj(innerCmd.Key, obj)
+						length := len(innerCmd.Content)
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64(length)))
+						})
+						continue
+					}
+
+					// 如果key存在, 但是类型不对
+					if obj.Type != datastructure.TypeString {
+						be, err := resp.ToSimpleError("ERR", "unkonown or wrong command")
+						if err != nil {
+							panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, be)
+						})
+						continue
+					}
+
+					// 如果类型对
+					var originStr string
+					if obj.Encoding == datastructure.EncodingStringInt {
+						originStr = fmt.Sprint(obj.Data.(*datastructure.StringInt).Data)
+					} else {
+						originStr = obj.Data.(*datastructure.StringRaw).Data
+					}
+					newStr := originStr + innerCmd.Content
+
+					i64, isInt64 := commands.ToolIsStringInteger(newStr)
+					if isInt64 {
+						obj.Encoding = datastructure.EncodingStringInt
+						obj.Data = &datastructure.StringInt{
+							Data: i64,
+						}
+					} else {
+						obj.Encoding = datastructure.EncodingStringRaw
+						obj.Data = &datastructure.StringRaw{
+							Data: newStr,
+						}
+					}
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64(len(newStr))))
+					})
+				case *commands.IncrCommand:
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
+					// 如果不存在, 那么直接创建
+					if obj == nil {
+						obj := new(datastructure.RdsObject)
+						obj.Type = datastructure.TypeString
+						obj.Encoding = datastructure.EncodingStringInt
+						obj.Data = &datastructure.StringInt{
+							Data: 1,
+						}
+						obj.TTL = nil
+						mem.SetObj(innerCmd.Key, obj)
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(1))
+						})
+						continue
+					}
+
+					if obj.Encoding != datastructure.EncodingStringInt {
+						se, err := resp.ToSimpleError("ERR", "value is not an integer")
+						if err != nil {
+							log.Panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, se)
+						})
+						continue
+					}
+
+					si := obj.Data.(*datastructure.StringInt)
+					si.Data++
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(si.Data))
+					})
+				case *commands.IncrByCommand:
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
+					// 如果不存在, 那么直接创建
+					if obj == nil {
+						obj := new(datastructure.RdsObject)
+						obj.Type = datastructure.TypeString
+						obj.Encoding = datastructure.EncodingStringInt
+						obj.Data = &datastructure.StringInt{
+							Data: innerCmd.By,
+						}
+						obj.TTL = nil
+						mem.SetObj(innerCmd.Key, obj)
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(innerCmd.By))
+						})
+						continue
+					}
+
+					if obj.Encoding != datastructure.EncodingStringInt {
+						se, err := resp.ToSimpleError("ERR", "value is not an integer")
+						if err != nil {
+							log.Panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, se)
+						})
+						continue
+					}
+
+					si := obj.Data.(*datastructure.StringInt)
+					si.Data += innerCmd.By
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(si.Data))
+					})
+				case *commands.DecrCommand:
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
+					// 如果不存在, 那么直接创建
+					if obj == nil {
+						obj := new(datastructure.RdsObject)
+						obj.Type = datastructure.TypeString
+						obj.Encoding = datastructure.EncodingStringInt
+						obj.Data = &datastructure.StringInt{
+							Data: -1,
+						}
+						obj.TTL = nil
+						mem.SetObj(innerCmd.Key, obj)
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(-1))
+						})
+						continue
+					}
+
+					if obj.Encoding != datastructure.EncodingStringInt {
+						se, err := resp.ToSimpleError("ERR", "value is not an integer")
+						if err != nil {
+							log.Panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, se)
+						})
+						continue
+					}
+
+					si := obj.Data.(*datastructure.StringInt)
+					si.Data--
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(si.Data))
+					})
+				case *commands.DecrByCommand:
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
+					// 如果不存在, 那么直接创建
+					if obj == nil {
+						obj := new(datastructure.RdsObject)
+						obj.Type = datastructure.TypeString
+						obj.Encoding = datastructure.EncodingStringInt
+						obj.Data = &datastructure.StringInt{
+							Data: -innerCmd.By,
+						}
+						obj.TTL = nil
+						mem.SetObj(innerCmd.Key, obj)
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(-innerCmd.By))
+						})
+						continue
+					}
+
+					if obj.Encoding != datastructure.EncodingStringInt {
+						se, err := resp.ToSimpleError("ERR", "value is not an integer")
+						if err != nil {
+							log.Panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, se)
+						})
+						continue
+					}
+
+					si := obj.Data.(*datastructure.StringInt)
+					si.Data -= innerCmd.By
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(si.Data))
+					})
 				}
 			}
 		} else {

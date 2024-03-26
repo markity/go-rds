@@ -27,11 +27,3 @@ type RdsObject struct {
 	TTL      *time.Time
 	Data     interface{}
 }
-
-type StringRaw struct {
-	Data string
-}
-
-type StringInt struct {
-	Data int64
-}

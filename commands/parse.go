@@ -71,7 +71,7 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 		}
 
 		if len(val.Data) != 2 {
-			return nil, errors.New("unexpected ping param number")
+			return &UnknownCommand{}, nil
 		}
 
 		second := getExactlyNthBulkStringInArray(val, 1)
@@ -98,39 +98,30 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 			return &UnknownCommand{}, nil
 		}
 
-		second := pointerStringToLower(getExactlyNthBulkStringInArray(val, 1))
-		if second == nil {
-			return nil, errors.New("unexpected")
-		}
-		if *second != "setinfo" {
-			return nil, errors.New("unexpected")
+		second := *pointerStringToLower(getExactlyNthBulkStringInArray(val, 1))
+		if second != "setinfo" {
+			return &UnknownCommand{}, nil
 		}
 
-		third := getExactlyNthBulkStringInArray(val, 2)
-		if third == nil {
-			return nil, errors.New("client thrid param type is unexpected")
-		}
+		third := *getExactlyNthBulkStringInArray(val, 2)
 
-		forth := getExactlyNthBulkStringInArray(val, 3)
-		if forth == nil {
-			return nil, errors.New("client forth param type is unexpected")
-		}
+		forth := *getExactlyNthBulkStringInArray(val, 3)
 
-		switch *third {
+		switch third {
 		case "LIB-NAME":
 			return &SetInfoLibNameCommand{
-				LibName: *forth,
+				LibName: forth,
 			}, nil
 		case "LIB-VER":
 			return &SetInfoLibVersionCommand{
-				LibVersion: *forth,
+				LibVersion: forth,
 			}, nil
 		default:
-			return nil, errors.New("client thrid param is unexpected")
+			return &UnknownCommand{}, nil
 		}
 	case "command":
 		if len(val.Data) != 1 {
-			return nil, errors.New("unexpected command number param number")
+			return &UnknownCommand{}, nil
 		}
 
 		return &CommandCommand{}, nil
@@ -140,40 +131,12 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 			return &UnknownCommand{}, nil
 		}
 
-		second_ := getExactlyNthBulkStringInArray(val, 1)
-		if second_ == nil {
-			return nil, errors.New("set command: unexpected second param type")
-		}
-
-		third_ := getExactlyNthBulkStringInArray(val, 2)
-		if third_ == nil {
-			return nil, errors.New("set command: unexpected thrid param type")
-		}
-
 		// key
-		second := *second_
+		second := *getExactlyNthBulkStringInArray(val, 1)
 		// value
-		third := *third_
+		third := *getExactlyNthBulkStringInArray(val, 2)
 
-		isInt64 := true
-
-		// check if value can be contain by int64
-
-		// start with 0
-		if len(third) > 1 && third[0] == '0' {
-			isInt64 = false
-		}
-
-		// has + char
-		if len(third) > 0 && third[0] == '+' {
-			isInt64 = false
-		}
-
-		// check is int64
-		i64, err := strconv.ParseInt(third, 10, 64)
-		if err != nil {
-			isInt64 = false
-		}
+		i64, isInt64 := ToolIsStringInteger(third)
 
 		encoding := datastructure.EncodingStringRaw
 		if isInt64 {
@@ -186,11 +149,8 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 		var px *int
 		if len(val.Data) > 3 {
 			for i := 3; i < len(val.Data); i++ {
-				entry_ := pointerStringToLower(getExactlyNthBulkStringInArray(val, i))
-				if entry_ == nil {
-					return nil, errors.New("unexpected")
-				}
-				entry := *entry_
+				// no panic here
+				entry := *pointerStringToLower(getExactlyNthBulkStringInArray(val, i))
 				switch entry {
 				case "xx":
 					if nx {
@@ -211,12 +171,7 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 					if i+1 >= len(val.Data) {
 						return &UnknownCommand{}, nil
 					}
-					exNumberStr_ := getExactlyNthBulkStringInArray(val, i+1)
-					if exNumberStr_ == nil {
-						return nil, errors.New("unexpected")
-					}
-
-					exNumberStr := *exNumberStr_
+					exNumberStr := *getExactlyNthBulkStringInArray(val, i+1)
 					if len(exNumberStr) == 0 {
 						return nil, errors.New("unexpected")
 					}
@@ -240,12 +195,7 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 					if i+1 >= len(val.Data) {
 						return &UnknownCommand{}, nil
 					}
-					pxNumberStr_ := getExactlyNthBulkStringInArray(val, i+1)
-					if pxNumberStr_ == nil {
-						return nil, errors.New("unexpected")
-					}
-
-					pxNumberStr := *pxNumberStr_
+					pxNumberStr := *getExactlyNthBulkStringInArray(val, i+1)
 					if len(pxNumberStr) == 0 {
 						return nil, errors.New("unexpected")
 					}
@@ -306,6 +256,65 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 		key := *getExactlyNthBulkStringInArray(val, 1)
 		return &GetCommand{
 			Key: key,
+		}, nil
+	case "append":
+		if len(val.Data) != 3 {
+			return &UnknownCommand{}, nil
+		}
+
+		key := *getExactlyNthBulkStringInArray(val, 1)
+		value := *getExactlyNthBulkStringInArray(val, 2)
+		return &AppendCommand{
+			Key:     key,
+			Content: value,
+		}, nil
+	case "incr":
+		if len(val.Data) != 2 {
+			return &UnknownCommand{}, nil
+		}
+
+		key := *getExactlyNthBulkStringInArray(val, 1)
+		return &IncrCommand{
+			Key: key,
+		}, nil
+	case "incrby":
+		if len(val.Data) != 3 {
+			return &UnknownCommand{}, nil
+		}
+
+		key := *getExactlyNthBulkStringInArray(val, 1)
+		incr, ok := ToolIsStringInteger(*getExactlyNthBulkStringInArray(val, 2))
+		if !ok {
+			return &UnknownCommand{}, nil
+		}
+
+		return &IncrByCommand{
+			Key: key,
+			By:  incr,
+		}, nil
+	case "decr":
+		if len(val.Data) != 2 {
+			return &UnknownCommand{}, nil
+		}
+
+		key := *getExactlyNthBulkStringInArray(val, 1)
+		return &DecrCommand{
+			Key: key,
+		}, nil
+	case "decrby":
+		if len(val.Data) != 3 {
+			return &UnknownCommand{}, nil
+		}
+
+		key := *getExactlyNthBulkStringInArray(val, 1)
+		decr, ok := ToolIsStringInteger(*getExactlyNthBulkStringInArray(val, 2))
+		if !ok {
+			return &UnknownCommand{}, nil
+		}
+
+		return &DecrByCommand{
+			Key: key,
+			By:  decr,
 		}, nil
 	default:
 		return &UnknownCommand{}, nil

@@ -37,6 +37,10 @@ func (mem *memLoop) DelRdsObj(key string) {
 	delete(mem.bigKV, key)
 }
 
+func (mem *memLoop) SetObj(key string, obj *datastructure.RdsObject) {
+	mem.bigKV[key] = obj
+}
+
 func (mem *memLoop) QueueCommand(command *commands.MemLoopCommandCover) {
 	mem.mu.Lock()
 	mem.commands = append(mem.commands, command)
