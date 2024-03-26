@@ -5,5 +5,5 @@ type ExistsCommand struct {
 }
 
 type DelCommand struct {
-	Key string
+	Key []string
 }

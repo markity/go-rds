@@ -384,6 +384,11 @@ func memloop(mem *memLoop) {
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(si.Data))
 					})
+				case *commands.DelCommand:
+					i := mem.DelRdsObj(innerCmd.Key)
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64(i)))
+					})
 				}
 			}
 		} else {

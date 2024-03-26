@@ -33,8 +33,15 @@ func (mem *memLoop) GetRdsObj(key string) (*datastructure.RdsObject, time.Time) 
 	return mem.bigKV[key], now
 }
 
-func (mem *memLoop) DelRdsObj(key string) {
-	delete(mem.bigKV, key)
+func (mem *memLoop) DelRdsObj(keys []string) int {
+	i := 0
+	for _, key := range keys {
+		if obj, _ := mem.GetRdsObj(key); obj != nil {
+			i++
+		}
+		delete(mem.bigKV, key)
+	}
+	return i
 }
 
 func (mem *memLoop) SetObj(key string, obj *datastructure.RdsObject) {

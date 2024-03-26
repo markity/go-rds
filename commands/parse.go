@@ -316,6 +316,19 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 			Key: key,
 			By:  decr,
 		}, nil
+	case "del":
+		if len(val.Data) == 1 {
+			return &UnknownCommand{}, nil
+		}
+
+		var keys []string
+		for i := 1; i < len(val.Data); i++ {
+			k := *getExactlyNthBulkStringInArray(val, i)
+			keys = append(keys, k)
+		}
+		return &DelCommand{
+			Key: keys,
+		}, nil
 	default:
 		return &UnknownCommand{}, nil
 	}
