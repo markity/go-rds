@@ -1,6 +1,10 @@
 package commands
 
-import "strconv"
+import (
+	"fmt"
+	datastructure "go-rds/data_structure"
+	"strconv"
+)
 
 func ToolIsStringInteger(str string) (int64, bool) {
 	isInt64 := true
@@ -23,4 +27,16 @@ func ToolIsStringInteger(str string) (int64, bool) {
 		isInt64 = false
 	}
 	return i64, isInt64
+}
+
+func MustGetStringFromRedisObj(obj *datastructure.RdsObject) string {
+	if obj.Type != datastructure.TypeString {
+		panic("checkme")
+	}
+
+	if obj.Encoding == datastructure.EncodingStringInt {
+		return fmt.Sprint(obj.Data.(*datastructure.StringInt).Data)
+	} else {
+		return obj.Data.(*datastructure.StringRaw).Data
+	}
 }

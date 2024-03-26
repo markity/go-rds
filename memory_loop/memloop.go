@@ -174,14 +174,7 @@ func memloop(mem *memLoop) {
 						continue
 					}
 
-					var data string
-					switch obj.Encoding {
-					case datastructure.EncodingStringRaw:
-						data = obj.Data.(*datastructure.StringRaw).Data
-					case datastructure.EncodingStringInt:
-						data = fmt.Sprint(obj.Data.(*datastructure.StringRaw).Data)
-					}
-
+					data := commands.MustGetStringFromRedisObj(obj)
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString(data))
 					})
@@ -388,6 +381,31 @@ func memloop(mem *memLoop) {
 					i := mem.DelRdsObj(innerCmd.Key)
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64(i)))
+					})
+				case *commands.GetDelCommand:
+					originObj, _ := mem.GetRdsObj(innerCmd.Key)
+					if originObj == nil {
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToNull())
+						})
+						continue
+					}
+
+					if originObj.Type != datastructure.TypeString {
+						se, err := resp.ToSimpleError("ERR", "value is not an string")
+						if err != nil {
+							panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, se)
+						})
+						continue
+					}
+
+					str := commands.MustGetStringFromRedisObj(originObj)
+					mem.DelRdsObj([]string{innerCmd.Key})
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString(str))
 					})
 				}
 			}
