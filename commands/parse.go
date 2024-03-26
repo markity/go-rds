@@ -338,6 +338,15 @@ func (*CommandParser) Parse(val_ resp.Value) (interface{}, error) {
 		return &GetDelCommand{
 			Key: key,
 		}, nil
+	case "strlen":
+		if len(val.Data) != 2 {
+			return &UnknownCommand{}, nil
+		}
+
+		key := *getExactlyNthBulkStringInArray(val, 1)
+		return &StrLenCommand{
+			Key: key,
+		}, nil
 	default:
 		return &UnknownCommand{}, nil
 	}

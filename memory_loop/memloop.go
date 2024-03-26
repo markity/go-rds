@@ -407,6 +407,30 @@ func memloop(mem *memLoop) {
 					command.Loop.RunInLoop(func() {
 						CallbackFunc(command.Loop, command.ConnectionID, resp.ToBulkString(str))
 					})
+				case *commands.StrLenCommand:
+					obj, _ := mem.GetRdsObj(innerCmd.Key)
+					if obj == nil {
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, resp.ToNull())
+						})
+						continue
+					}
+
+					if obj.Type != datastructure.TypeString {
+						se, err := resp.ToSimpleError("ERR", "value is not an string")
+						if err != nil {
+							panic(err)
+						}
+						command.Loop.RunInLoop(func() {
+							CallbackFunc(command.Loop, command.ConnectionID, se)
+						})
+						continue
+					}
+
+					strLen := len(commands.MustGetStringFromRedisObj(obj))
+					command.Loop.RunInLoop(func() {
+						CallbackFunc(command.Loop, command.ConnectionID, resp.ToInteger(int64(strLen)))
+					})
 				}
 			}
 		} else {
